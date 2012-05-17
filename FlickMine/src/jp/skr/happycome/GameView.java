@@ -4,9 +4,15 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
+import android.view.MotionEvent;
 import android.view.View;
 
+/**
+ * @author mudwell
+ * 
+ */
 public class GameView extends View {
 
 	private Board board;
@@ -14,11 +20,14 @@ public class GameView extends View {
 	private int column;
 	private int cellSize;
 
+	/**
+	 * @param context
+	 */
 	public GameView(Context context) {
 		super(context);
-		row = 11;
-		column = 10;
-		board = new Board(row, column);
+		row = 7;
+		column = 7;
+		board = new Board(column, row);
 		board.setup(10);
 	}
 
@@ -37,23 +46,75 @@ public class GameView extends View {
 		// ボードを描画する
 		for (int r = 0; r < row; r++) {
 			for (int c = 0; c < column; c++) {
-				if (board.getMine(c, r)) {
-					// 地雷があれば赤
-					paint.setColor(Color.rgb(0xff, 0, 0));
+				if (board.isOpen(c, r)) {
+					drawBlock(canvas, c, r, paint, 0xff808080);
+					// 開かれている場合
+					if (board.getMine(c, r)) {
+						// 地雷を描画する
+						// paint.setColor(0xffff0000);
+						// paint.setStyle(Style.FILL);
+						// canvas.drawCircle(c * cellSize + cellSize / 2, r
+						// * cellSize + cellSize / 2, cellSize / 2, paint);
+					} else if (board.getMineAround(c, r) > 0) {
+						// 周囲の地雷数を描画する
+						paint.setColor(0xff000000);
+						paint.setTextSize(cellSize);
+						paint.setTextAlign(Align.CENTER);
+						canvas.drawText(
+								Integer.toString(board.getMineAround(c, r)), c
+										* cellSize + cellSize / 2, (r + 1)
+										* cellSize, paint);
+					} else {
+						// 地雷がない場合は背景を描画する
+					}
+					// paint.setColor(Color.rgb(0xff, 0, 0));
 				} else {
-					// 地雷がなければ黒
 					paint.setColor(Color.rgb(0, 0, 0));
+					drawBlock(canvas, c, r, paint, 0xffc9c9c9);
 				}
-				// マスを描画する
-				paint.setStyle(Style.FILL);
-				canvas.drawRect(c * cellSize, r * cellSize, (c + 1) * cellSize,
-						(r + 1) * cellSize, paint);
-				paint.setStyle(Style.STROKE);
-				paint.setColor(Color.rgb(128, 128, 128));
-				canvas.drawRect(c * cellSize, r * cellSize, (c + 1) * cellSize,
-						(r + 1) * cellSize, paint);
+				if (!board.isPlaying() && board.getMine(c, r)) {
+					// 地雷を描画する
+					paint.setColor(0xffff0000);
+					paint.setStyle(Style.FILL);
+					canvas.drawCircle(c * cellSize + cellSize / 2, r * cellSize
+							+ cellSize / 2, cellSize / 2, paint);
+
+				}
 			}
 		}
 	}
 
+	/**
+	 * マスを描画する.
+	 * 
+	 * @param canvas
+	 * @param x
+	 * @param y
+	 * @param paint
+	 * @param bgcolor
+	 *            背景色(ARGB)
+	 */
+	private void drawBlock(Canvas canvas, int x, int y, Paint paint, int bgcolor) {
+
+		// マスを描画する
+		paint.setColor(bgcolor);
+		paint.setStyle(Style.FILL);
+		canvas.drawRect(x * cellSize, y * cellSize, (x + 1) * cellSize, (y + 1)
+				* cellSize, paint);
+		paint.setStyle(Style.STROKE);
+		paint.setColor(Color.rgb(128, 128, 128));
+		canvas.drawRect(x * cellSize, y * cellSize, (x + 1) * cellSize, (y + 1)
+				* cellSize, paint);
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		int x = (int) (event.getX() / cellSize);
+		int y = (int) (event.getY() / cellSize);
+		if (x < column && y < row && !board.isOpen(x, y)) {
+			board.open(x, y);
+			invalidate();
+		}
+		return true;
+	}
 }
