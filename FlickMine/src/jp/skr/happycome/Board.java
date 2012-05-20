@@ -9,6 +9,7 @@ package jp.skr.happycome;
 public class Board {
 	private static final int OPEN = 0;
 	private static final int CLOSE = 1;
+	private static final int FLAG = 2;
 	private int row;
 	private int column;
 	private int mineN;
@@ -265,5 +266,34 @@ public class Board {
 	 */
 	public boolean isPlaying() {
 		return playing;
+	}
+
+	/**
+	 * @param x
+	 * @param y
+	 * @param flag
+	 */
+	public void setFlag(int x, int y, boolean flag) {
+		if (flag && panel[x + y * column] == CLOSE) {
+			panel[x + y * column] = FLAG;
+		} else if (!flag && panel[x + y * column] == FLAG) {
+			panel[x + y * column] = CLOSE;
+		}
+	}
+
+	/**
+	 * 周囲を開く.
+	 * 
+	 * (x, y)がすでに開かれていて地雷数と同数の旗が周囲に立っている場合、周囲の閉じているマスを全て開く.
+	 * 
+	 * @param x
+	 * @param y
+	 */
+	public void openAround(int x, int y) {
+
+	}
+
+	public boolean isFlag(int c, int r) {
+		return panel[c + r * column] == FLAG;
 	}
 }
