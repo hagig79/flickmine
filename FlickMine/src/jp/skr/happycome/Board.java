@@ -17,6 +17,7 @@ public class Board {
 	private int[] mineNums;
 	private int[] panel;
 	private int openN;
+	private boolean gameFailed;
 
 	/**
 	 * ゲーム中かどうか.
@@ -90,31 +91,38 @@ public class Board {
 		}
 		openN = 0;
 		playing = true;
+		gameFailed = false;
 	}
 
 	/**
-	 * @return
+	 * 地雷の総数を返す.
+	 * 
+	 * @return 地雷の総数
 	 */
 	public int getMineN() {
 		return mineN;
 	}
 
 	/**
-	 * @param col
-	 * @param row
+	 * 指定した位置の回りにある地雷の数を返す.
+	 * 
+	 * @param x
+	 * @param y
 	 * @return
 	 */
-	public int getMineAround(int col, int row) {
-		return mineNums[col + row * column];
+	public int getMineAround(int x, int y) {
+		return mineNums[x + y * column];
 	}
 
 	/**
-	 * @param col
-	 * @param row
-	 * @return
+	 * 指定した位置に地雷があるかどうかを返す.
+	 * 
+	 * @param x
+	 * @param y
+	 * @return 地雷があればtrue.なければfalse.
 	 */
-	public boolean getMine(int col, int row) {
-		return mineData[col + row * this.column];
+	public boolean getMine(int x, int y) {
+		return mineData[x + y * this.column];
 	}
 
 	/**
@@ -152,6 +160,7 @@ public class Board {
 		} else if (mineData[index]) {
 			// ゲーム終了
 			playing = false;
+			gameFailed = true;
 		} else {
 			openRecursive(x, y);
 		}
@@ -160,6 +169,9 @@ public class Board {
 			if (panel[i] == OPEN) {
 				openN++;
 			}
+		}
+		if (row * column - mineN == openN) {
+			playing = false;
 		}
 	}
 
@@ -290,10 +302,98 @@ public class Board {
 	 * @param y
 	 */
 	public void openAround(int x, int y) {
+		if (!isOpen(x, y) || getMineAround(x, y) == 0) {
+			// まだ開かれていないか周囲に地雷が無い場合は何もしない
+			return;
+		}
+		// 旗の数と地雷の数が同じかどうか
+		if (getMineAround(x, y) != countFlagAround(x, y)) {
+			return;
+		}
+		if (x > 0) {
+			if (y > 0 && !isOpen(x - 1, y - 1) && !isFlag(x - 1, y - 1)) {
+				open(x - 1, y - 1);
+			}
+			if (!isOpen(x - 1, y) && !isFlag(x - 1, y)) {
+				open(x - 1, y);
+			}
+			if (y < row - 1 && !isOpen(x - 1, y + 1) && !isFlag(x - 1, y + 1)) {
+				open(x - 1, y + 1);
+			}
+		}
+		if (x < column - 1) {
+			if (y > 0 && !isOpen(x + 1, y - 1) && !isFlag(x + 1, y - 1)) {
+				open(x + 1, y - 1);
+			}
+			if (!isOpen(x + 1, y) && !isFlag(x + 1, y)) {
+				open(x + 1, y);
+			}
+			if (y < row - 1 && !isOpen(x + 1, y + 1) && !isFlag(x + 1, y + 1)) {
+				open(x + 1, y + 1);
+			}
+		}
+		if (y > 0 && !isOpen(x, y - 1) && !isFlag(x, y - 1)) {
+			open(x, y - 1);
+		}
+		if (y < row - 1 && !isOpen(x, y + 1) && !isFlag(x, y + 1)) {
+			open(x, y + 1);
+		}
+	}
 
+	private int countFlagAround(int x, int y) {
+		int count = 0;
+		if (x > 0) {
+			if (panel[(x - 1) + y * column] == FLAG) {
+				count++;
+			}
+			if (y > 0) {
+				if (panel[(x - 1) + (y - 1) * column] == FLAG) {
+					count++;
+				}
+			}
+			if (y < row - 1) {
+				if (panel[(x - 1) + (y + 1) * column] == FLAG) {
+					count++;
+				}
+			}
+		}
+		if (x < column - 1) {
+			if (panel[(x + 1) + y * column] == FLAG) {
+				count++;
+			}
+			if (y > 0) {
+				if (panel[(x + 1) + (y - 1) * column] == FLAG) {
+					count++;
+				}
+			}
+			if (y < row - 1) {
+				if (panel[(x + 1) + (y + 1) * column] == FLAG) {
+					count++;
+				}
+			}
+		}
+		if (y > 0) {
+			if (panel[x + (y - 1) * column] == FLAG) {
+				count++;
+			}
+		}
+		if (y < row - 1) {
+			if (panel[x + (y + 1) * column] == FLAG) {
+				count++;
+			}
+		}
+		return count;
 	}
 
 	public boolean isFlag(int c, int r) {
 		return panel[c + r * column] == FLAG;
+	}
+
+	public boolean isGameOver() {
+		return !playing && gameFailed;
+	}
+
+	public boolean isGameClear() {
+		return !playing && !gameFailed;
 	}
 }
